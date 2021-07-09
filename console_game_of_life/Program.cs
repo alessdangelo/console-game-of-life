@@ -1,9 +1,8 @@
 ﻿//Author : alessdangelo
 //Date : 07/07/2021
 //Description : Quick console implementation of conway's game of life with borders
-//ToDo: Add a menu under the game panel to tell which boutons can be used and some other informations
-//ToDo: Add a method to generate random cell state
-//ToDo: Add a button to play the game automaticaly and a button to stop (playing state is off)
+//Modification date : 09/09/2021
+//Modification desc : Added a menu under the grid with WriteCommands(), a random cell state generator and a way to continously play until a button is pressed.
 using System;
 
 namespace console_game_of_life
@@ -50,6 +49,17 @@ namespace console_game_of_life
         /// </summary>
         private static bool startTurn = false;
 
+        /// <summary>
+        /// Allow to loop continously if backspace is pressed
+        /// </summary>
+        private static bool playContinuously = false;
+
+        /// <summary>
+        ///To always generate the same sequence and validate the tests if needed
+        /// </summary>
+        private const int _SEED = 1;
+
+
         static void Main(string[] args)
         {
             Console.SetWindowSize(_gridSize * 2, _gridSize + 5);
@@ -63,10 +73,14 @@ namespace console_game_of_life
                 Move();
                 if (startTurn)
                 {
-                    SingleTurn();
-                    WriteGrid();
+                    do
+                    {
+                        SingleTurn();
+                        WriteGrid();
+                    } while (playContinuously && Console.KeyAvailable == false);
                     Console.SetCursorPosition(cursorPosX, cursorPosY);
                     startTurn = false;
+                    playContinuously = false;
                 }
             }
         }
@@ -134,8 +148,37 @@ namespace console_game_of_life
                         Console.SetCursorPosition(cursorPosX, cursorPosY);
                     }
                     break;
+                //Start a single turn
                 case ConsoleKey.Enter:
                     startTurn = true;
+                    break;
+                //Continously play until another button is pressed
+                case ConsoleKey.Backspace:
+                    startTurn = true;
+                    playContinuously = true;
+                    break;
+                //Put random state (dead or alive) in a cell in the grid
+                case ConsoleKey.R:
+                    for (int y = 0; y < _gridSize; y++)
+                    {
+                        for (int x = 0; x < _gridSize; x++)
+                        {
+                            int number = RandomGenerator.GetInstance(_SEED).Next(2);
+                            _cellGrid[x, y] = number;
+                        }
+                    }
+                    WriteGrid();
+                    break;
+                //Reset the grid
+                case ConsoleKey.X:
+                    for (int y = 0; y < _gridSize; y++)
+                    {
+                        for (int x = 0; x < _gridSize; x++)
+                        {
+                            _cellGrid[x, y] = 0;
+                        }
+                    }
+                    WriteGrid();
                     break;
             }
         }
@@ -161,7 +204,8 @@ namespace console_game_of_life
         /// </summary>
         private static void WriteGrid()
         {
-            Console.Clear();
+            Console.SetCursorPosition(0, 0);
+            Console.CursorVisible = false;
             for (int y = 0; y < _gridSize; y++)
             {
                 for (int x = 0; x < _gridSize; x++)
@@ -179,6 +223,20 @@ namespace console_game_of_life
                 }
                 Console.WriteLine();
             }
+            WriteCommands();
+            Console.CursorVisible = true;
+        }
+
+
+        private static void WriteCommands()
+        {
+            Console.Write("[WASD] or [Arrow keys] to move \t");
+            Console.WriteLine("[Spacebar] Toggle Cell state");
+            Console.Write("[Enter] Start turn \t");
+            Console.WriteLine("[Backspace] Start until stopped");
+            Console.Write("[Any button] Stop\t");
+            Console.WriteLine("[R] Generate random cell state");
+            Console.Write("[X] Reset the grid \t");
         }
 
         /// <summary>
